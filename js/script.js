@@ -7,7 +7,7 @@ const form = document.getElementById('add-movie-form');
 
 let allMovies = [];
 
-// --- Render Movies ---
+// Render Movies
 function renderMovies(movies) {
     movieListDiv.innerHTML = "";
 
@@ -16,20 +16,10 @@ function renderMovies(movies) {
         movieElement.classList.add("movie-item");
 
         movieElement.innerHTML = `
-            <p><strong>${escapeHtml(movie.title)}</strong> 
-            (${escapeHtml(String(movie.year))}) - ${escapeHtml(movie.genre)}</p>
-
+            <p><strong>${movie.title}</strong> (${movie.year}) - ${movie.genre}</p>
             <div>
-                <button class="edit-btn"
-                    data-id="${movie.id}"
-                    data-title="${escapeAttr(movie.title)}"
-                    data-year="${escapeAttr(movie.year)}"
-                    data-genre="${escapeAttr(movie.genre)}"
-                >Edit</button>
-
-                <button class="delete-btn" data-id="${movie.id}">
-                    Delete
-                </button>
+                <button class="edit-btn" data-id="${movie.id}">Edit</button>
+                <button class="delete-btn" data-id="${movie.id}">Delete</button>
             </div>
         `;
 
@@ -37,10 +27,10 @@ function renderMovies(movies) {
     });
 }
 
-// --- Fetch Movies ---
+// Fetch Movies (NO CACHE FIX)
 function fetchMovies() {
-    fetch(API_URL)
-        .then(res => res.json())
+    fetch(API_URL, { cache: "no-store" })
+        .then(response => response.json())
         .then(data => {
             allMovies = data;
             renderMovies(allMovies);
@@ -50,7 +40,7 @@ function fetchMovies() {
 
 fetchMovies();
 
-// --- Search ---
+// Search
 searchInput.addEventListener("input", () => {
     const keyword = searchInput.value.toLowerCase();
 
@@ -62,18 +52,18 @@ searchInput.addEventListener("input", () => {
     renderMovies(filtered);
 });
 
-// --- Add Movie ---
+// Add Movie
 form.addEventListener("submit", (event) => {
     event.preventDefault();
 
     const newMovie = {
         title: document.getElementById("title").value.trim(),
         genre: document.getElementById("genre").value.trim(),
-        year: parseInt(document.getElementById("year").value)
+        year: Number(document.getElementById("year").value)
     };
 
-    if (!newMovie.title || isNaN(newMovie.year)) {
-        alert("Please fill all fields correctly.");
+    if (!newMovie.title || !newMovie.year) {
+        alert("Please enter a valid title and year.");
         return;
     }
 
@@ -90,33 +80,35 @@ form.addEventListener("submit", (event) => {
         .catch(err => console.error("POST error:", err));
 });
 
-// --- Edit & Delete ---
+// EDIT + DELETE (Event Delegation)
 movieListDiv.addEventListener("click", (e) => {
-    const btn = e.target;
-    const id = btn.dataset.id;
+    const id = e.target.dataset.id;
 
     // DELETE
-    if (btn.classList.contains("delete-btn")) {
-        if (!confirm("Are you sure you want to delete this?")) return;
+    if (e.target.classList.contains("delete-btn")) {
+        if (!confirm("Delete this movie?")) return;
 
-        fetch(`${API_URL}/${id}`, { method: "DELETE" })
-            .then(res => res.json())
+        fetch(`${API_URL}/${id}`, {
+            method: "DELETE"
+        })
             .then(() => fetchMovies())
             .catch(err => console.error("DELETE error:", err));
     }
 
     // EDIT
-    if (btn.classList.contains("edit-btn")) {
-        const title = prompt("New title:", btn.dataset.title);
-        const year = prompt("New year:", btn.dataset.year);
-        const genre = prompt("New genre:", btn.dataset.genre);
+    if (e.target.classList.contains("edit-btn")) {
+        const movie = allMovies.find(m => m.id === id);
 
-        if (!title || !year || !genre) return;
+        const newTitle = prompt("New title:", movie.title);
+        const newYear = prompt("New year:", movie.year);
+        const newGenre = prompt("New genre:", movie.genre);
+
+        if (!newTitle || !newYear || !newGenre) return;
 
         const updatedMovie = {
-            title,
-            year: parseInt(year),
-            genre
+            title: newTitle,
+            year: Number(newYear),
+            genre: newGenre
         };
 
         fetch(`${API_URL}/${id}`, {
@@ -124,24 +116,7 @@ movieListDiv.addEventListener("click", (e) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedMovie)
         })
-            .then(res => res.json())
             .then(() => fetchMovies())
-            .catch(err => console.error("EDIT error:", err));
+            .catch(err => console.error("PUT error:", err));
     }
 });
-
-// --- Safety helpers ---
-function escapeHtml(str) {
-    return String(str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-}
-
-function escapeAttr(str) {
-    return String(str)
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#39;");
-}
