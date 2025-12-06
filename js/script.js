@@ -1,5 +1,6 @@
 // Correct API URL
-const API_URL = "http://localhost:3000/movies";
+const API_URL = "https://69346c064090fe3bf01fe10a.mockapi.io/movies";
+
 
 const movieListDiv = document.getElementById('movie-list');
 const searchInput = document.getElementById('search-input');
