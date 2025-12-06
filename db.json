@@ -1,0 +1,40 @@
+{
+  "movies": [
+    {
+      "id": "3ac3",
+      "title": "Ashmita",
+      "genre": "Horror",
+      "year": 1990
+    },
+    {
+      "id": "9b5b",
+      "title": "kawai",
+      "genre": "cute",
+      "year": 1980
+    },
+    {
+      "id": "3400",
+      "title": "nazuna",
+      "genre": "comedy",
+      "year": 1970
+    },
+    {
+      "id": "0c07",
+      "title": "swekshya",
+      "genre": "love",
+      "year": 1981
+    },
+    {
+      "id": "e777",
+      "title": "Conjuring",
+      "genre": "horror",
+      "year": 2002
+    },
+    {
+      "id": "588f",
+      "title": "yuku",
+      "genre": "lover",
+      "year": 2005
+    }
+  ]
+}
