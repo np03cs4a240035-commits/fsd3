@@ -7,7 +7,7 @@ const form = document.getElementById('add-movie-form');
 
 let allMovies = [];
 
-// Render Movies to screen (keeps ID as string)
+// --- Render Movies ---
 function renderMovies(movies) {
     movieListDiv.innerHTML = "";
 
@@ -16,10 +16,20 @@ function renderMovies(movies) {
         movieElement.classList.add("movie-item");
 
         movieElement.innerHTML = `
-            <p><strong>${escapeHtml(movie.title)}</strong> (${escapeHtml(String(movie.year))}) - ${escapeHtml(movie.genre)}</p>
+            <p><strong>${escapeHtml(movie.title)}</strong> 
+            (${escapeHtml(String(movie.year))}) - ${escapeHtml(movie.genre)}</p>
+
             <div>
-                <button class="edit-btn" data-id="${movie.id}" data-title="${escapeAttr(movie.title)}" data-year="${escapeAttr(movie.year)}" data-genre="${escapeAttr(movie.genre)}">Edit</button>
-                <button class="delete-btn" data-id="${movie.id}">Delete</button>
+                <button class="edit-btn"
+                    data-id="${movie.id}"
+                    data-title="${escapeAttr(movie.title)}"
+                    data-year="${escapeAttr(movie.year)}"
+                    data-genre="${escapeAttr(movie.genre)}"
+                >Edit</button>
+
+                <button class="delete-btn" data-id="${movie.id}">
+                    Delete
+                </button>
             </div>
         `;
 
@@ -27,12 +37,12 @@ function renderMovies(movies) {
     });
 }
 
-// Fetch movies
+// --- Fetch Movies ---
 function fetchMovies() {
     fetch(API_URL)
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-            allMovies = data; // keep IDs as strings
+            allMovies = data;
             renderMovies(allMovies);
         })
         .catch(err => console.error("Fetch error:", err));
@@ -40,7 +50,7 @@ function fetchMovies() {
 
 fetchMovies();
 
-// Search bar filter
+// --- Search ---
 searchInput.addEventListener("input", () => {
     const keyword = searchInput.value.toLowerCase();
 
@@ -52,18 +62,18 @@ searchInput.addEventListener("input", () => {
     renderMovies(filtered);
 });
 
-// Add Movie (POST)
+// --- Add Movie ---
 form.addEventListener("submit", (event) => {
     event.preventDefault();
 
     const newMovie = {
         title: document.getElementById("title").value.trim(),
         genre: document.getElementById("genre").value.trim(),
-        year: parseInt(document.getElementById("year").value, 10)
+        year: parseInt(document.getElementById("year").value)
     };
 
-    if (!newMovie.title || !newMovie.year) {
-        alert("Please provide title and year.");
+    if (!newMovie.title || isNaN(newMovie.year)) {
+        alert("Please fill all fields correctly.");
         return;
     }
 
@@ -80,56 +90,47 @@ form.addEventListener("submit", (event) => {
         .catch(err => console.error("POST error:", err));
 });
 
-// Event delegation for Edit/Delete buttons
+// --- Edit & Delete ---
 movieListDiv.addEventListener("click", (e) => {
-    const target = e.target;
+    const btn = e.target;
+    const id = btn.dataset.id;
 
     // DELETE
-    if (target.classList.contains("delete-btn")) {
-        const id = target.dataset.id;
+    if (btn.classList.contains("delete-btn")) {
+        if (!confirm("Are you sure you want to delete this?")) return;
 
-        if (!confirm("Delete this movie?")) return;
-
-        fetch(`${API_URL}/${id}`, {
-            method: "DELETE"
-        })
+        fetch(`${API_URL}/${id}`, { method: "DELETE" })
             .then(res => res.json())
             .then(() => fetchMovies())
             .catch(err => console.error("DELETE error:", err));
     }
 
     // EDIT
-    if (target.classList.contains("edit-btn")) {
-        const id = target.dataset.id;
+    if (btn.classList.contains("edit-btn")) {
+        const title = prompt("New title:", btn.dataset.title);
+        const year = prompt("New year:", btn.dataset.year);
+        const genre = prompt("New genre:", btn.dataset.genre);
 
-        const currentTitle = target.dataset.title;
-        const currentYear = target.dataset.year;
-        const currentGenre = target.dataset.genre;
-
-        const newTitle = prompt("Enter new title:", currentTitle);
-        const newYear = prompt("Enter new year:", currentYear);
-        const newGenre = prompt("Enter new genre:", currentGenre);
-
-        if (!newTitle || !newYear || !newGenre) return;
+        if (!title || !year || !genre) return;
 
         const updatedMovie = {
-            title: newTitle,
-            year: parseInt(newYear, 10),
-            genre: newGenre
+            title,
+            year: parseInt(year),
+            genre
         };
 
         fetch(`${API_URL}/${id}`, {
-            method: "PATCH",
+            method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(updatedMovie)
         })
             .then(res => res.json())
             .then(() => fetchMovies())
-            .catch(err => console.error("PUT error:", err));
+            .catch(err => console.error("EDIT error:", err));
     }
 });
 
-// Helpers
+// --- Safety helpers ---
 function escapeHtml(str) {
     return String(str)
         .replaceAll("&", "&amp;")
@@ -139,6 +140,8 @@ function escapeHtml(str) {
         .replaceAll("'", "&#39;");
 }
 
-function escapeAttr(val) {
-    return String(val).replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+function escapeAttr(str) {
+    return String(str)
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
 }
